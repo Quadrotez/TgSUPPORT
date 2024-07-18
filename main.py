@@ -1,12 +1,10 @@
 import asyncio
-import logging
-import sqlite3
-
-from functions import *
 
 from aiogram import types, Bot, Dispatcher
-from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.types.callback_query import CallbackQuery
+from aiogram.utils.keyboard import InlineKeyboardBuilder
+
+from functions import *
 
 bot, dp = Bot(config['GENERAL']['BOT_TOKEN']), Dispatcher()
 
@@ -34,8 +32,18 @@ async def main_text(message: types.Message):
 @dp.callback_query()
 async def main_callback_query_handler(data: CallbackQuery):
     if data.data.split(' ')[0] == 'PROBLEM':
-        await data.message.answer('Пришлите ваше сообщение. Поддержка ответит совсем скоро!')
+        builder = InlineKeyboardBuilder()
+        builder.button(text=cancel, callback_data='CANCEL_PROBLEM')
+
+        await data.message.answer(on_problem_callback, reply_markup=builder.as_markup())
         condition.set_value(data.message.chat.id, 'SENDING')
+
+    elif data.data == 'CANCEL_PROBLEM':
+        condition.set_value(data.message.chat.id, 'NORMAL')
+
+        await data.message.delete()
+
+        await data.message.answer(canceled)
 
 
 async def main():
