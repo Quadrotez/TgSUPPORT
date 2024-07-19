@@ -1,4 +1,3 @@
-import sqlite3
 from functions import init
 
 db, cursor = init.database()
