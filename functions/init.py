@@ -33,7 +33,7 @@ def database():
     ROLE TEXT)''')
 
     cursor.execute('''CREATE TABLE IF NOT EXISTS APPEALS (ID TEXT PRIMARY KEY, CHAT_ID INT, CONTENT TEXT, 
-    STATUS BOOLEAN)''')
+    STATUS BOOLEAN, TYPE_PROBLEM TEXT)''')
 
     return db, cursor
 
