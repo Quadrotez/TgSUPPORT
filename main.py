@@ -67,7 +67,6 @@ async def main_text(message: types.Message):
 
             await message.answer(opened_appeals, reply_markup=builder.as_markup())
 
-
         if condition.get(message.chat.id).split(' ')[0] == 'ANSWER_APPEAL':
             id_appeal = condition.get(message.chat.id).split(' ')[1]
             await bot.send_message(appeals.get_chat_id(id_appeal), answer_skeleton.format(message.text))
