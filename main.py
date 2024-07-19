@@ -1,4 +1,5 @@
 import asyncio
+import io
 
 import aiogram.exceptions
 from aiogram import types, Bot, Dispatcher, F
@@ -46,15 +47,24 @@ async def main_text(message: types.Message):
 
             await message.answer(appeal_was_sent)
 
-            id_appeal = appeals.add(message.chat.id, message.text, condition.get(message.chat.id).split(' ')[2])
+            if message.text:
+                content = message.text
 
-            builder = InlineKeyboardBuilder()
-            builder.button(text=answer, callback_data=f'ANSWER_APPEAL {id_appeal}')
+            elif message.photo:
+                photo_bytes = await bot.download_file(
+                    (await bot.get_file(message.photo[-1].file_id)).file_path, destination=io.BytesIO())
+                photo_bytes.seek(0)
+                content = photo_bytes.read()
+
+            else:
+                await message.answer('Вы прислали неподдерживаемый тип контента!')
+                return
+
+            id_appeal = appeals.add(message.chat.id, content, condition.get(message.chat.id).split(' ')[2],
+                                    caption=message.caption if message.caption else None)
 
             for i in role.get_all('SECURITY'):
-                await bot.send_message(i, new_appeal.format(
-                    message.chat.id, id_appeal, appeals.get_type_problem(id_appeal), appeals.get_content(id_appeal)),
-                                       reply_markup=builder.as_markup())
+                await appeals.blit_problem(id_appeal, bot, i)
 
             condition.set_value(message.chat.id, 'NORMAL')
 
@@ -67,7 +77,7 @@ async def main_text(message: types.Message):
 
             await message.answer(opened_appeals, reply_markup=builder.as_markup())
 
-        if condition.get(message.chat.id).split(' ')[0] == 'ANSWER_APPEAL':
+        elif condition.get(message.chat.id).split(' ')[0] == 'ANSWER_APPEAL':
             id_appeal = condition.get(message.chat.id).split(' ')[1]
             await bot.send_message(appeals.get_chat_id(id_appeal), answer_skeleton.format(message.text))
 
@@ -104,16 +114,15 @@ async def main_callback_query_handler(data: CallbackQuery):
         condition.set_value(data.message.chat.id, f'ANSWER_APPEAL {data.data.split(" ")[1]}')
 
     elif data.data.split(' ')[0] == 'BLIT_APPEAL':
-        id_appeal = data.data.split(' ')[1]
+        if not cursor.execute('SELECT * FROM APPEALS WHERE ID = ?', (data.data.split(" ")[1],)).fetchall():
+            await data.message.answer(appeal_was_closed)
+            return
 
+        await appeals.blit_problem(data.data.split(' ')[1], bot, data.message.chat.id)
 
-        builder = InlineKeyboardBuilder()
-        builder.button(text=answer, callback_data=f'ANSWER_APPEAL {id_appeal}')
-
-        await data.message.answer(new_appeal.format(
-            appeals.get_chat_id(id_appeal), id_appeal,
-            appeals.get_type_problem(id_appeal), appeals.get_content(id_appeal)),
-                               reply_markup=builder.as_markup())
+    elif data.data.split(' ')[0] == 'DELETE_APPEAL':
+        appeals.delete(data.data.split(' ')[1])
+        await data.message.answer(appeal_was_deleted)
 
 
 async def main():

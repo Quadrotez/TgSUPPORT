@@ -32,6 +32,8 @@ appeal_was_closed = 'Обращение было закрыто!'
 answer_was_sent = 'Ответ отправлен!'
 send_your_answer = 'Пришлите ваш ответ:'
 opened_appeals = 'Открытые, на данный момент, обращения:'
+delete_appeal = 'Удалить обращение'
+appeal_was_deleted = 'Обращение успешно было удалено!'
 
 # Типы проблем
 pPRODUCT = 'Проблема с товаром'
